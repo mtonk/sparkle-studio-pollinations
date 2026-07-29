@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Sparkle Studio</title>
+
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Sparkle" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#d4a8f0" />
+
+  <link rel="stylesheet" href="/css/style.css?v=2" />
+  <script src="/js/vendor/fabric-5.3.1.min.js?v=2"></script>
+  <script src="/js/vendor/lucide-1.27.0.min.js?v=2"></script>
+</head>
+<body>
+  <header>
+    <h1>Sparkle Studio</h1>
+    <p>Draw your jewelry, then make it sparkle!</p>
+    <button id="btn-settings" class="header-settings-btn" title="Settings">
+      <i data-lucide="settings"></i>
+    </button>
+  </header>
+
+  <main>
+
+    <!-- Column 1: Reference images -->
+    <section class="reference-panel">
+      <h2>Find Ideas</h2>
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="e.g. diamond ring..." />
+        <button id="btn-search">Search</button>
+      </div>
+      <div id="reference-grid">
+        <p class="placeholder-text">Search for jewelry ideas above!</p>
+      </div>
+    </section>
+
+    <!-- Column 2: Drawing canvas -->
+    <section class="canvas-area">
+      <div class="toolbar">
+        <button id="btn-pencil" class="tool active" title="Pencil"><i data-lucide="pencil"></i></button>
+        <button id="btn-circle" class="tool" title="Circle"><i data-lucide="circle"></i></button>
+        <button id="btn-rect" class="tool" title="Rectangle"><i data-lucide="rectangle-horizontal"></i></button>
+        <button id="btn-heart" class="tool" title="Heart"><i data-lucide="heart"></i></button>
+        <button id="btn-eraser" class="tool" title="Eraser"><i data-lucide="eraser"></i></button>
+        <button id="btn-fill" class="tool" title="Fill"><i data-lucide="paint-bucket"></i></button>
+        <button id="btn-undo" class="tool" disabled title="Undo"><i data-lucide="undo-2"></i></button>
+        <button id="btn-redo" class="tool" disabled title="Redo"><i data-lucide="redo-2"></i></button>
+        <button id="btn-clear" class="tool danger" title="Clear canvas"><i data-lucide="trash-2"></i></button>
+        <input type="color" id="color-picker" value="#000000" title="Pick a color" />
+        <input type="range" id="brush-size" min="1" max="20" value="4" title="Brush size" />
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="drawing-canvas"></canvas>
+        <div id="canvas-login-overlay" class="canvas-login-overlay hidden">
+          <div class="canvas-login-card">
+            <i data-lucide="log-in"></i>
+            <p>Log in to use your drawing</p>
+            <span class="canvas-login-sub">Bring your own Pollen — unlock img2img,<br />better models, and higher resolution.</span>
+            <button class="canvas-login-btn">Log in</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 3: Generated result -->
+    <section class="result-area">
+      <div class="description-box">
+        <label for="jewelry-description">Describe your jewelry</label>
+        <textarea id="jewelry-description" placeholder="Draw something, or describe your jewelry here..."></textarea>
+      </div>
+      <button id="btn-generate" class="generate-btn">Make it Sparkle!</button>
+      <div id="result">
+        <p class="placeholder-text">Your sparkly jewelry will appear here!</p>
+        <img id="result-image" src="" alt="Generated jewelry" style="display:none;" />
+        <a id="btn-save" class="save-image-btn" style="display:none;">
+          <i data-lucide="download"></i> Save
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Lightbox for reference image preview -->
+  <div id="lightbox" class="lightbox hidden">
+    <div class="lightbox-backdrop"></div>
+    <img id="lightbox-img" src="" alt="Reference image" />
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal" class="settings-modal hidden">
+    <div class="settings-modal-backdrop"></div>
+    <div class="settings-card settings-modal-card">
+      <div class="settings-modal-header">
+        <h2>Settings</h2>
+        <button id="btn-settings-close" class="settings-close-btn" title="Close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Account section -->
+      <section class="settings-section">
+        <h3>Account</h3>
+        <p class="settings-description">
+          Log in with Pollinations to use your own models and submit your drawings as image references.
+        </p>
+        <div id="account-status" class="account-status not-logged-in">
+          <div class="account-avatar">
+            <i data-lucide="user"></i>
+          </div>
+          <div class="account-info">
+            <span class="account-name">Not logged in</span>
+            <span class="account-detail">Free tier — text-to-image only</span>
+          </div>
+          <button id="btn-login" class="login-btn">Log in</button>
+          <button id="btn-logout" class="logout-btn hidden">Log out</button>
+        </div>
+      </section>
+
+      <!-- Model selection -->
+      <section class="settings-section">
+        <h3>Image Model</h3>
+        <p class="settings-description">
+          <span id="model-tier-label">Free models — log in for more.</span>
+        </p>
+        <div class="model-select-row">
+          <select id="model-select">
+            <option value="flux">Flux</option>
+          </select>
+        </div>
+      </section>
+
+      <div class="settings-actions">
+        <button id="modal-btn-save" class="save-btn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js?v=16"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

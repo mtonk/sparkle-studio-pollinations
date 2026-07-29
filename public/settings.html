@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Sparkle Studio – Settings</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Sparkle" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#d4a8f0" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="/js/vendor/lucide-1.27.0.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Sparkle Studio</h1>
+    <p>Draw your jewelry, then make it sparkle!</p>
+    <a href="/" class="header-settings-btn" title="Back to app">
+      <i data-lucide="arrow-left"></i>
+    </a>
+  </header>
+
+  <main class="settings-main">
+    <div class="settings-card">
+      <h2>Settings</h2>
+
+      <section class="settings-section">
+        <h3>Account</h3>
+        <p class="settings-description">
+          Log in with Pollinations to use your own models and submit your drawings as image references.
+        </p>
+        <div id="account-status" class="account-status not-logged-in">
+          <div class="account-avatar">
+            <i data-lucide="user"></i>
+          </div>
+          <div class="account-info">
+            <span class="account-name">Not logged in</span>
+            <span class="account-detail">Free tier — text-to-image only</span>
+          </div>
+          <button id="btn-login" class="login-btn">Log in</button>
+          <button id="btn-logout" class="logout-btn hidden">Log out</button>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h3>Image Model</h3>
+        <p class="settings-description">
+          <span id="model-tier-label">Free models — log in for more.</span>
+        </p>
+        <div class="model-select-row">
+          <select id="model-select">
+            <option value="flux">Flux</option>
+          </select>
+        </div>
+      </section>
+
+      <div class="settings-actions">
+        <button id="btn-save" class="save-btn">Save settings</button>
+        <span id="save-confirm" class="save-confirm hidden">Saved!</span>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/settings.js?v=2"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
