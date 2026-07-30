@@ -31,7 +31,17 @@ function updateAccountUI(user) {
     detailSpan.textContent = user.name ? `${user.name} — logged in` : 'Logged in';
     if (user.picture) {
       const container = status.querySelector('.account-avatar');
-      if (container) container.innerHTML = `<img src="${user.picture}" alt="" class="account-avatar-img" />`;
+      // Build the node instead of interpolating into innerHTML, and only accept
+      // https URLs — user.picture comes from the OAuth provider's userinfo and
+      // must not be trusted as markup.
+      if (container && /^https:\/\//.test(user.picture)) {
+        container.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = user.picture;
+        img.alt = '';
+        img.className = 'account-avatar-img';
+        container.appendChild(img);
+      }
     }
     refreshModelList();
   } else {

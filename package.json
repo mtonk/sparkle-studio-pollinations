@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Draw jewelry, make it sparkle — powered by Pollinations.ai",
   "main": "server.js",
+  "license": "MIT",
+  "author": "Mark Tonkelowitz",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"

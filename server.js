@@ -1,27 +1,49 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
 
 const app = express();
+const isProd = process.env.NODE_ENV === 'production';
 
 app.use(express.json({ limit: '5mb' }));
 
+// Never ship a hard-coded session secret in a public repo — cookies signed with
+// a known secret can be forged. Use SESSION_SECRET when set; otherwise fall back
+// to a random per-process secret so local dev still works (sessions reset on
+// restart) and warn loudly.
+let sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  sessionSecret = crypto.randomBytes(32).toString('hex');
+  console.warn(
+    'WARNING: SESSION_SECRET is not set. Using a random secret — all sessions ' +
+    'reset on restart. Set SESSION_SECRET in .env before deploying.'
+  );
+}
+
+// Behind a TLS-terminating proxy in production, trust it and mark cookies secure.
+if (isProd) app.set('trust proxy', 1);
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'CHANGE-ME-IN-PRODUCTION',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 },
+  cookie: { httpOnly: true, sameSite: 'lax', secure: isProd, maxAge: 24 * 60 * 60 * 1000 },
 }));
 
 app.use('/icons', express.static('public/icons'));
 app.get('/manifest.json', (req, res) => res.sendFile('manifest.json', { root: 'public' }));
 
 if (process.env.APP_PASSWORD) {
+  const expected = Buffer.from(process.env.APP_PASSWORD);
   app.use((req, res, next) => {
+    const deny = () => res.set('WWW-Authenticate', 'Basic realm="Sparkle Studio"').sendStatus(401);
     const auth = req.headers.authorization;
-    if (!auth?.startsWith('Basic ')) return res.set('WWW-Authenticate', 'Basic realm="Sparkle Studio"').sendStatus(401);
+    if (!auth?.startsWith('Basic ')) return deny();
     const [, , pass] = Buffer.from(auth.slice(6), 'base64').toString().match(/^([^:]*):(.*)$/) || [];
-    if (pass !== process.env.APP_PASSWORD) return res.set('WWW-Authenticate', 'Basic realm="Sparkle Studio"').sendStatus(401);
+    const given = Buffer.from(pass ?? '');
+    // Constant-time comparison so response timing doesn't leak the password.
+    if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return deny();
     next();
   });
 }
@@ -75,14 +97,12 @@ async function pollinationsText(promptParts, apiKey) {
   console.log(`Pollinations ${model}: ${res.status} in ${Date.now() - started}ms`);
 
   if (res.status === 402) {
-    throw Object.assign(
-      new Error('Pollinations pollen balance is empty — claim the tier grant or top up at enter.pollinations.ai'),
-      { status: 402 },
-    );
+    throw userError("You're out of pollen! Top up your Pollinations account at enter.pollinations.ai, then try again.", 402);
   }
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    // Internal detail — logged server-side, never shown to the user.
     throw Object.assign(new Error(`Pollinations text failed (${res.status}): ${body.slice(0, 500)}`), { status: res.status });
   }
 
@@ -168,9 +188,8 @@ async function resolvePrompt(sketchBase64, description, apiKey) {
   }
 
   if (!finalDescription && sketchBase64 && !description?.trim()) {
-    throw new Error(
-      'Drawing description requires a Pollinations account. ' +
-      'Add a text description, or log in above.'
+    throw userError(
+      'To turn a drawing into jewelry, add a short description or log in with Pollinations.'
     );
   }
 
@@ -237,14 +256,12 @@ async function generateAuthenticatedImage(prompt, model, apiKey, filename) {
   });
 
   if (res.status === 402) {
-    throw Object.assign(
-      new Error('Your Pollinations pollen balance is empty — top up at enter.pollinations.ai'),
-      { status: 402 },
-    );
+    throw userError("You're out of pollen! Top up your Pollinations account at enter.pollinations.ai, then try again.", 402);
   }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    // Internal detail — logged server-side, never shown to the user.
     throw new Error(`Pollinations image generation failed: ${res.status} ${text}`);
   }
 
@@ -253,6 +270,27 @@ async function generateAuthenticatedImage(prompt, model, apiKey, filename) {
   if (!b64) throw new Error('No image returned from Pollinations');
 
   return `data:${mimeFromBase64(b64)};base64,${b64}`;
+}
+
+// --- Error handling ---
+//
+// Errors we deliberately want the user to read are created with userError() and
+// carry `expose: true`. Everything else (upstream failures, bugs) is logged in
+// full on the server and the client gets a friendly, generic message — so we
+// never leak status codes or upstream response bodies into the UI.
+
+function userError(message, status = 400) {
+  return Object.assign(new Error(message), { expose: true, status });
+}
+
+function sendError(res, err, context) {
+  const status = Number(err.status) || 500;
+  // Full detail (message + stack) stays server-side for debugging.
+  console.error(`[${context}]`, err.stack || err.message);
+  const message = err.expose
+    ? err.message
+    : 'Oops — the sparkle machine hiccupped. Please try again in a moment!';
+  res.status(status).json({ error: message });
 }
 
 // --- Session & Auth ---
@@ -307,7 +345,7 @@ app.get('/auth/callback', (req, res) => {
 (function(){var h=location.hash;if(!h||!h.includes('api_key=')){location.href='/';return}
 var p=new URLSearchParams(h.slice(1)),k=p.get('api_key'),s=p.get('state'),ss
 try{ss=sessionStorage.getItem('byop-state');sessionStorage.removeItem('byop-state')}catch(e){}
-if(s&&ss&&s!==ss)console.warn('State mismatch')
+if(s&&ss&&s!==ss){location.href='/';return}
 if(p.get('error')==='access_denied'){location.href='/';return}
 if(!k){location.href='/';return}
 fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:k})})
@@ -348,9 +386,9 @@ app.get('/api/models', async (req, res) => {
       unique.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
       return res.json({ models: unique, authenticated: true });
     } catch (err) {
-      console.error('Failed to fetch authenticated models:', err.message);
+      console.error('[models] failed to fetch authenticated models:', err.stack || err.message);
       const sortedFree = [...FREE_IMAGE_MODELS].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-      return res.json({ models: sortedFree, authenticated: false, error: err.message });
+      return res.json({ models: sortedFree, authenticated: false, error: 'Could not load premium models — showing free models.' });
     }
   }
 
@@ -372,8 +410,7 @@ app.post('/api/resolve-prompt', async (req, res) => {
     const result = await resolvePrompt(imageData, description?.trim(), apiKey);
     res.json(result);
   } catch (err) {
-    console.error('Prompt resolution error:', err);
-    res.status(500).json({ error: err.message || 'Prompt generation failed' });
+    sendError(res, err, 'resolve-prompt');
   }
 });
 
@@ -417,8 +454,7 @@ app.post('/api/generate', async (req, res) => {
 
     res.json({ imageUrl, description: finalDescription || description, filename: finalFilename });
   } catch (err) {
-    console.error('Generation error:', err);
-    res.status(err.status || 500).json({ error: err.message || 'Image generation failed' });
+    sendError(res, err, 'generate');
   }
 });
 
