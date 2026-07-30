@@ -93,15 +93,16 @@ before exposing this publicly:
   logged-in user's own key; free generation uses none. (If you later wire
   `POLLINATIONS_API_KEY` into the request path to offer vision to logged-out
   users, gate the app with `APP_PASSWORD` and add rate limiting first.)
-- **No rate limiting is built in.** `/api/generate`, `/api/resolve-prompt`, and
-  `/api/search` are open by default. For a public deployment, put a rate limiter
-  (e.g. `express-rate-limit`) or a reverse proxy in front to prevent abuse.
+- **Rate limiting is built in** (`express-rate-limit`): 200 requests / 15 min
+  per IP across `/api`, plus a tighter 20 / 5 min on the generation endpoints
+  (`/api/generate`, `/api/resolve-prompt`). Behind a proxy, set
+  `NODE_ENV=production` so the limiter keys off the real client IP.
 - **Sessions are in-memory** (Express default `MemoryStore`) — fine for a single
-  process, but use a persistent store for multi-instance production.
+  process, but use a persistent store (e.g. Redis) for multi-instance production.
 
 ## Tech stack
 
-- **Backend:** Node.js, Express, express-session
+- **Backend:** Node.js, Express, express-session, express-rate-limit
 - **Frontend:** vanilla JS, [Fabric.js](http://fabricjs.com/) (canvas),
   [Lucide](https://lucide.dev/) (icons) — both vendored, no build step
 - **AI:** [Pollinations.ai](https://pollinations.ai) for vision and image generation

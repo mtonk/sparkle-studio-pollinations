@@ -2,6 +2,7 @@ require('dotenv').config();
 const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
+const { rateLimit } = require('express-rate-limit');
 
 const app = express();
 const isProd = process.env.NODE_ENV === 'production';
@@ -49,6 +50,35 @@ if (process.env.APP_PASSWORD) {
 }
 
 app.use(express.static('public'));
+
+// --- Rate limiting ---
+//
+// Protects the API from abuse (e.g. someone scripting the generation endpoints).
+// Static assets, icons, and the manifest are served above and stay unthrottled.
+// Keys off the client IP; in production `trust proxy` (set above) makes that the
+// real client rather than the load balancer.
+
+// Broad cap across all /api endpoints.
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 200,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Whoa, slow down a little! Please wait a bit and try again.' },
+});
+
+// Tighter cap on the expensive endpoints (image generation + vision), which
+// each cost compute and potentially pollen.
+const generateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: "You're making sparkles super fast! Take a short break and try again in a minute." },
+});
+
+app.use('/api', apiLimiter);
+app.use(['/api/generate', '/api/resolve-prompt'], generateLimiter);
 
 // --- Pollinations helpers ---
 
