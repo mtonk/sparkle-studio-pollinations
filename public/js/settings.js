@@ -1,4 +1,4 @@
-const DEFAULTS = { model: 'flux' };
+const DEFAULTS = { model: 'sana' };
 
 function updateAccountUI(user) {
   const status = document.getElementById('account-status');

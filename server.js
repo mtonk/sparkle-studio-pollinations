@@ -246,7 +246,7 @@ const FREE_IMAGE_MODELS = [
 ];
 
 async function generateFreeImage(prompt, model, filename) {
-  const modelParam = model || 'flux';
+  const modelParam = model || 'sana';
   const seed = Math.floor(Math.random() * 999999);
   const url = `${IMAGE_FREE_BASE}/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&model=${encodeURIComponent(modelParam)}&seed=${seed}`;
   console.log(`Generating via free Pollinations (model: ${modelParam})`);
@@ -270,7 +270,8 @@ function mimeFromBase64(b64) {
 }
 
 async function generateAuthenticatedImage(prompt, model, apiKey, filename) {
-  const modelId = model || 'flux';
+  // Cheapest catalog model, so a missing model never means a surprise charge.
+  const modelId = model || 'sana';
   console.log(`Generating via authenticated Pollinations (model: ${modelId})`);
 
   const body = {

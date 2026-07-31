@@ -104,7 +104,7 @@ async function refreshModelList() {
   } catch (err) {
     console.error('Failed to load models:', err);
     if (!select.options.length) {
-      select.innerHTML = '<option value="flux">Flux Schnell</option>';
+      select.innerHTML = '<option value="sana">Sana Sprint 1.6B</option>';
     }
   }
 }
@@ -124,7 +124,7 @@ function loginWithPollinations() {
 }
 
 // --- Settings modal ---
-const SETTINGS_DEFAULTS = { model: 'flux' };
+const SETTINGS_DEFAULTS = { model: 'sana' };
 
 function loadSparkleSettings() {
   try { return { ...SETTINGS_DEFAULTS, ...JSON.parse(localStorage.getItem('sparkle-settings') || '{}') }; }
@@ -455,7 +455,7 @@ generateBtn.addEventListener('click', async () => {
   generateBtn.disabled = true;
   generateBtn.textContent = 'Thinking...';
 
-  let sparkleSettings = { model: 'flux' };
+  let sparkleSettings = { ...SETTINGS_DEFAULTS };
   try { sparkleSettings = { ...sparkleSettings, ...JSON.parse(localStorage.getItem('sparkle-settings') || '{}') }; } catch {}
 
   const canvasSnapshot = JSON.stringify(canvas.toJSON());
