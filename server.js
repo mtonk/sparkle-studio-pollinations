@@ -235,14 +235,18 @@ async function resolvePrompt(sketchBase64, description, apiKey) {
 // --- Image generation ---
 
 // Models the anonymous image.pollinations.ai endpoint actually serves, which
-// is only sana — it accepts any model name and silently generates with sana
+// is one: it accepts any model name and silently generates with that one
 // anyway, so entries here must be verified, not assumed. Run
 // `node scripts/check-free-models.js` to re-check.
+//
+// The id stays 'sana' even though upstream renamed the model to dreamshaper —
+// they kept sana as an alias for the legacy proxy, and that proxy still only
+// answers to the old name.
 //
 // Listing a model here also pins it to the free endpoint when a key is
 // present, so anything added wrongly costs logged-in users the real model.
 const FREE_IMAGE_MODELS = [
-  { id: 'sana', name: 'Sana Sprint 1.6B', tier: 'free' },
+  { id: 'sana', name: 'DreamShaper 8 LCM', tier: 'free' },
 ];
 
 async function generateFreeImage(prompt, model, filename) {
@@ -389,6 +393,14 @@ fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},
 
 // --- Routes ---
 
+// True when an upstream model is one we already serve free, under either its
+// current name or an alias it was renamed from.
+function isOfferedFree(model) {
+  const freeIds = new Set(FREE_IMAGE_MODELS.map(m => m.id));
+  const names = [model.name, ...(model.aliases || [])];
+  return names.some(n => typeof n === 'string' && freeIds.has(n));
+}
+
 // GET /api/models
 // Returns available image models. If a session has an apiKey, also fetches
 // premium models the key can access.
@@ -409,6 +421,11 @@ app.get('/api/models', async (req, res) => {
         // The picker drives image generation only; the endpoint also lists video models.
         .filter(m => (m.output_modalities || []).includes('image'))
         .filter(m => (m.input_modalities || []).includes('text'))
+        // Drop anything already offered free. Matching on id alone isn't
+        // enough: upstream renames a model and keeps the old name as an alias,
+        // so dreamshaper (aliased sana) would otherwise appear a second time as
+        // a billable row for a model we already list as free.
+        .filter(m => !isOfferedFree(m))
         .map(m => ({
           id: m.name,
           name: m.title || m.name,

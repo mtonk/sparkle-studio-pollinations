@@ -104,7 +104,7 @@ async function refreshModelList() {
   } catch (err) {
     console.error('Failed to load models:', err);
     if (!select.options.length) {
-      select.innerHTML = '<option value="sana">Sana Sprint 1.6B</option>';
+      select.innerHTML = '<option value="sana">DreamShaper 8 LCM</option>';
     }
   }
 }
