@@ -234,13 +234,12 @@ async function resolvePrompt(sketchBase64, description, apiKey) {
 
 // --- Image generation ---
 
+// Served by the anonymous image.pollinations.ai endpoint, which isn't billed.
+// Both cost pollen on the authenticated endpoint, so generate() deliberately
+// routes these through the free path even when a key is present.
 const FREE_IMAGE_MODELS = [
-  { id: 'flux', name: 'Flux', tier: 'free' },
-  { id: 'flux-realism', name: 'Flux Realism', tier: 'free' },
-  { id: 'flux-anime', name: 'Flux Anime', tier: 'free' },
-  { id: 'flux-pro', name: 'Flux Pro', tier: 'free' },
-  { id: 'turbo', name: 'Turbo', tier: 'free' },
-  { id: '3d', name: '3D Render', tier: 'free' },
+  { id: 'sana', name: 'Sana Sprint 1.6B', tier: 'free' },
+  { id: 'flux', name: 'Flux Schnell', tier: 'free' },
 ];
 
 async function generateFreeImage(prompt, model, filename) {
