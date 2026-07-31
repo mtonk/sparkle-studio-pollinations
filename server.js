@@ -240,6 +240,7 @@ async function resolvePrompt(sketchBase64, description, apiKey) {
 const FREE_IMAGE_MODELS = [
   { id: 'sana', name: 'Sana Sprint 1.6B', tier: 'free' },
   { id: 'flux', name: 'Flux Schnell', tier: 'free' },
+  { id: 'gptimage', name: 'GPT Image 1 Mini', tier: 'free' },
 ];
 
 async function generateFreeImage(prompt, model, filename) {
