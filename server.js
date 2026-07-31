@@ -401,6 +401,10 @@ app.get('/api/models', async (req, res) => {
       if (!r.ok) throw new Error(`Models fetch failed: ${r.status}`);
       const all = await r.json();
       const authModels = (all || [])
+        // Community models are user-published and unvetted — skip them.
+        .filter(m => !m.community)
+        // The picker drives image generation only; the endpoint also lists video models.
+        .filter(m => (m.output_modalities || []).includes('image'))
         .filter(m => (m.input_modalities || []).includes('text'))
         .map(m => ({
           id: m.name,
