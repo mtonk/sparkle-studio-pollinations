@@ -234,13 +234,15 @@ async function resolvePrompt(sketchBase64, description, apiKey) {
 
 // --- Image generation ---
 
-// Served by the anonymous image.pollinations.ai endpoint, which isn't billed.
-// Both cost pollen on the authenticated endpoint, so generate() deliberately
-// routes these through the free path even when a key is present.
+// Models the anonymous image.pollinations.ai endpoint actually serves, which
+// is only sana — it accepts any model name and silently generates with sana
+// anyway, so entries here must be verified, not assumed. Run
+// `node scripts/check-free-models.js` to re-check.
+//
+// Listing a model here also pins it to the free endpoint when a key is
+// present, so anything added wrongly costs logged-in users the real model.
 const FREE_IMAGE_MODELS = [
   { id: 'sana', name: 'Sana Sprint 1.6B', tier: 'free' },
-  { id: 'flux', name: 'Flux Schnell', tier: 'free' },
-  { id: 'gptimage', name: 'GPT Image 1 Mini', tier: 'free' },
 ];
 
 async function generateFreeImage(prompt, model, filename) {
